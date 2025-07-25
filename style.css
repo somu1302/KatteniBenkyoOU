@@ -1,3 +1,10 @@
+html, body {
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   margin: 0;
   font-family: sans-serif;
@@ -5,10 +12,13 @@ body {
   color: #1a1a1a;
 }
 #mainContent {
+  margin: 0 auto;
   padding: 20px;
   padding-bottom: 90px;
   max-width: 900px;
-  margin: 0 auto;
+  height: calc(100vh - 60px);
+  overflow-y: auto; /* コンテンツ部分だけ縦スクロール可能 */
+  box-sizing: border-box;
 }
 h2 {
   color: #3366cc;
@@ -85,11 +95,11 @@ button:hover {
   background-color: #e4f0ff;
   border-radius: 8px;
 }
-.record-list-scroll {
+.record-list {
   margin-top: 40px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-bottom: 60px;
+  overflow-y: visible;
+  max-height: none;
+  height: auto;
 }
 .record-grid {
   display: grid;

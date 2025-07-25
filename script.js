@@ -48,22 +48,24 @@ function showStudy() {
 }
 
 function startStudy() {
+  const fileInput = document.getElementById('fileInput');
+
+  // ファイル未選択ならエラー
+  if (!fileInput.files[0]) {
+    alert('開始時の写真またはPDFを選択してください。');
+    return;
+  }
+
   studyMeta = {
     title: document.getElementById('titleInput').value.trim() || "なし",
     startMemo: document.getElementById('startMemo').value.trim() || "なし",
   };
-  const fileInput = document.getElementById('fileInput');
-  if (fileInput.files[0]) {
-    fileToBase64(fileInput.files[0], (base64) => {
-      studyMeta.startPhoto = base64;
-      studyMeta.startPhotoType = fileInput.files[0].type; // ファイルタイプも保持
-      startTimerView();
-    });
-  } else {
-    studyMeta.startPhoto = null;
-    studyMeta.startPhotoType = null;
+
+  fileToBase64(fileInput.files[0], (base64) => {
+    studyMeta.startPhoto = base64;
+    studyMeta.startPhotoType = fileInput.files[0].type; // ファイルタイプも保持
     startTimerView();
-  }
+  });
 }
 
 function startTimerView() {
@@ -116,8 +118,16 @@ function endStudy() {
 function recordAndGo() {
   const c = parseInt(document.getElementById('correctCount').value);
   const t = parseInt(document.getElementById('totalCount').value);
+  const endFileInput = document.getElementById('endFileInput');
+
   if (isNaN(c) || isNaN(t) || t <= 0) { alert('正しい数値を入力してください'); return; }
   if (c > t) { alert('正解数が問題数を超えています'); return; }
+
+  // ファイル未選択ならエラー
+  if (!endFileInput.files[0]) {
+    alert('終了時の写真またはPDFを選択してください。');
+    return;
+  }
 
   const totalSec = (endTime - startTime) / 1000;
   const accuracyRatio = c / t;
@@ -127,15 +137,9 @@ function recordAndGo() {
   const recs = JSON.parse(localStorage.getItem('studyRecords') || '[]');
   const newId = recs.length + 1;
 
-  const endFileInput = document.getElementById('endFileInput');
-
-  if (endFileInput.files[0]) {
-    fileToBase64(endFileInput.files[0], (base64) => {
-      saveRecord(recs, newId, c, t, score, totalSec, base64, endFileInput.files[0].type);
-    });
-  } else {
-    saveRecord(recs, newId, c, t, score, totalSec, null, null);
-  }
+  fileToBase64(endFileInput.files[0], (base64) => {
+    saveRecord(recs, newId, c, t, score, totalSec, base64, endFileInput.files[0].type);
+  });
 }
 
 function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64, endPhotoType) {
@@ -193,17 +197,40 @@ function showRecords() {
   const recs = JSON.parse(localStorage.getItem('studyRecords') || '[]');
   const rates = JSON.parse(localStorage.getItem('dailyRates') || '{}');
   const dates = Object.keys(rates).sort();
-  const times = dates.map(d => {
-    const secs = recs.filter(r => r.startTime.startsWith(d))
-      .reduce((a, r) => a + r.elapsedSec, 0);
-    return parseFloat((secs / 3600).toFixed(2));
-  });
+  
+  // 1. レート一覧
   const rateList = dates.map(d => rates[d]);
 
+  // 2. 合計スコア
+  const totalScore = recs.reduce((sum, r) => sum + (r.score || 0), 0);
+
+  // 3. 合計時間（秒）→ 分・秒 → 時間・分
+  const totalSec = recs.reduce((sum, r) => sum + (r.elapsedSec || 0), 0);
+  const totalMinutes = Math.floor(totalSec / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  // 4. 最新レート
+  const latestRate = dates.length > 0 ? rates[dates[dates.length - 1]].toFixed(2) : '0.00';
+
+  // 5. 勉強時間リスト（日ごと）
+  const times = dates.map(d => {
+    const secs = recs.filter(r => r.startTime.startsWith(d))
+      .reduce((a, r) => a + (r.elapsedSec || 0), 0);
+    return parseFloat((secs / 3600).toFixed(2));
+  });
+
+  // 6. HTML出力
   let html = `<h2>記録を見る</h2>
+    <div style="margin-bottom: 16px; text-align: center; white-space: nowrap;">
+      <strong>レート：</strong>${latestRate}　
+      <strong>合計スコア：</strong>${totalScore}　
+      <strong>合計勉強時間：</strong>${hours}時間${minutes}分
+    </div>
     <canvas id="rateChart"></canvas>
     <canvas id="timeChart"></canvas>
-    <div class="record-list-scroll"><div class="record-grid">`;
+    <div class="record-list"><div class="record-grid">`;
+
   recs.forEach(r => {
     const dt = new Date(r.startTime);
     const label = `${dt.getFullYear()}.${dt.getMonth() + 1}.${dt.getDate()} ${dt.getHours()}:${dt.getMinutes().toString().padStart(2, '0')}`;
@@ -219,12 +246,22 @@ function showRecords() {
         終了メモ：${r.endMemo}
       </div>`;
   });
+
   html += `</div></div>`;
   document.getElementById('mainContent').innerHTML = html;
 
+  // 7. グラフ描画
   new Chart(document.getElementById('rateChart').getContext('2d'), {
     type: 'line',
-    data: { labels: dates, datasets: [{ label: 'レート', data: rateList, borderColor: '#ff9933', fill: false }] },
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'レート',
+        data: rateList,
+        borderColor: '#ff9933',
+        fill: false
+      }]
+    },
     options: {
       scales: {
         y: {
@@ -235,9 +272,17 @@ function showRecords() {
       }
     }
   });
+
   new Chart(document.getElementById('timeChart').getContext('2d'), {
     type: 'bar',
-    data: { labels: dates, datasets: [{ label: '勉強時間 (h)', data: times, backgroundColor: '#3399ff' }] },
+    data: {
+      labels: dates,
+      datasets: [{
+        label: '勉強時間 (h)',
+        data: times,
+        backgroundColor: '#3399ff'
+      }]
+    },
     options: {
       scales: {
         y: {
@@ -250,6 +295,7 @@ function showRecords() {
     }
   });
 }
+
 
 // 拡大詳細表示関連
 function expandDetail(id) {
