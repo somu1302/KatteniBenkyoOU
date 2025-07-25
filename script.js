@@ -19,7 +19,7 @@ function showStudy() {
   document.getElementById('mainContent').innerHTML = `
     <h2>勉強する</h2>
     <label for="fileInput" class="custom-file-label">写真を選択</label>
-    <input type="file" id="fileInput" accept="image/*" style="display:none">  <!-- 修正 -->
+    <input type="file" id="fileInput" accept="image/*" capture="environment">
     <div id="startPhotoPreview" style="text-align:center; margin-bottom:16px;"></div>
     <input type="text" id="titleInput" placeholder="タイトル(教科・タグなど)">
     <textarea id="startMemo" placeholder="開始メモ"></textarea>
@@ -79,7 +79,7 @@ function endStudy() {
   document.getElementById('mainContent').innerHTML = `
     <h2>結果入力</h2>
     <label for="endFileInput" class="custom-file-label">終了写真を選択</label>
-    <input type="file" id="endFileInput" accept="image/*" style="display:none">  <!-- 修正 -->
+    <input type="file" id="endFileInput" accept="image/*" capture="environment">
     <div id="endPhotoPreview" style="text-align:center; margin-bottom:16px;"></div>
     <input type="number" id="correctCount" placeholder="正解数">
     <input type="number" id="totalCount" placeholder="問題数">
