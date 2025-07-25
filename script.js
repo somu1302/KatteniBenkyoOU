@@ -50,6 +50,7 @@ function showStudy() {
 function startStudy() {
   const fileInput = document.getElementById('fileInput');
 
+  // ファイル未選択ならエラー
   if (!fileInput.files[0]) {
     alert('開始時の写真またはPDFを選択してください。');
     return;
@@ -114,17 +115,15 @@ function endStudy() {
   };
 }
 
-async function recordAndGo() {
+function recordAndGo() {
   const c = parseInt(document.getElementById('correctCount').value);
   const t = parseInt(document.getElementById('totalCount').value);
   const endFileInput = document.getElementById('endFileInput');
 
-  if (isNaN(c) || isNaN(t) || t <= 0) {
-    alert('正しい数値を入力してください'); return;
-  }
-  if (c > t) {
-    alert('正解数が問題数を超えています'); return;
-  }
+  if (isNaN(c) || isNaN(t) || t <= 0) { alert('正しい数値を入力してください'); return; }
+  if (c > t) { alert('正解数が問題数を超えています'); return; }
+
+  // ファイル未選択ならエラー
   if (!endFileInput.files[0]) {
     alert('終了時の写真またはPDFを選択してください。');
     return;
@@ -138,13 +137,11 @@ async function recordAndGo() {
   const recs = JSON.parse(localStorage.getItem('studyRecords') || '[]');
   const newId = recs.length + 1
 
-  try {
-    const base64 = await fileToBase64(endFileInput.files[0]);
+  fileToBase64(endFileInput.files[0]).then(base64 => {
     saveRecord(recs, newId, c, t, score, totalSec, base64, endFileInput.files[0].type);
-  } catch (e) {
+  }).catch(() => {
     alert('ファイルの読み込みに失敗しました。');
-    console.error(e);
-  }
+  });
 }
 
 function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64, endPhotoType) {
@@ -172,13 +169,10 @@ function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64, endPhoto
   setTimeout(() => expandDetail(newId), 100);
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result);
-    reader.onerror = e => reject(e);
-    reader.readAsDataURL(file);
-  });
+function fileToBase64(file, callback) {
+  const reader = new FileReader();
+  reader.onload = e => callback(e.target.result);
+  reader.readAsDataURL(file);
 }
 
 // --- 日別レート更新 ---
