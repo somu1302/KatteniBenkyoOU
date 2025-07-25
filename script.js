@@ -137,37 +137,42 @@ function recordAndGo() {
   const recs = JSON.parse(localStorage.getItem('studyRecords') || '[]');
   const newId = recs.length + 1
 
-  fileToBase64(endFileInput.files[0]).then(base64 => {
+  fileToBase64(endFileInput.files[0], (base64) => {
     saveRecord(recs, newId, c, t, score, totalSec, base64, endFileInput.files[0].type);
-  }).catch(() => {
-    alert('ファイルの読み込みに失敗しました。');
   });
 }
 
 function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64, endPhotoType) {
-  const record = {
-    id: newId,
-    title: studyMeta.title,
-    startMemo: studyMeta.startMemo,
-    endMemo: document.getElementById('endMemo').value.trim() || "なし",
-    total: t,
-    correct: c,
-    score,
-    startTime: startTime.toISOString(),
-    elapsedSec: totalSec,
-    startPhoto: studyMeta.startPhoto,
-    startPhotoType: studyMeta.startPhotoType,
-    endPhoto: endPhotoBase64,
-    endPhotoType: endPhotoType
-  };
-  recs.push(record);
-  localStorage.setItem('studyRecords', JSON.stringify(recs));
-  updateDailyRates(recs);
-  switchMode('records');
+  try {
+    const endMemoElem = document.getElementById('endMemo');
+    const endMemo = endMemoElem ? endMemoElem.value.trim() || "なし" : "なし";
 
-  // 直後に拡大表示する処理を追加
-  setTimeout(() => expandDetail(newId), 100);
+    const record = {
+      id: newId,
+      title: studyMeta.title || "なし",
+      startMemo: studyMeta.startMemo || "なし",
+      endMemo: endMemo,
+      total: t,
+      correct: c,
+      score,
+      startTime: startTime.toISOString(),
+      elapsedSec: totalSec,
+      startPhoto: studyMeta.startPhoto || null,
+      startPhotoType: studyMeta.startPhotoType || null,
+      endPhoto: endPhotoBase64 || null,
+      endPhotoType: endPhotoType || null
+    };
+    recs.push(record);
+    localStorage.setItem('studyRecords', JSON.stringify(recs));
+    updateDailyRates(recs);
+    switchMode('records');
+
+    setTimeout(() => expandDetail(newId), 100);
+  } catch (e) {
+    alert("記録保存中にエラーが発生しました: " + e.message);
+  }
 }
+
 
 function fileToBase64(file, callback) {
   const reader = new FileReader();
