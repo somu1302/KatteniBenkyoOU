@@ -61,11 +61,17 @@ function startStudy() {
     startMemo: document.getElementById('startMemo').value.trim() || "なし",
   };
 
-  fileToBase64(fileInput.files[0], (base64) => {
-    studyMeta.startPhoto = base64;
-    studyMeta.startPhotoType = fileInput.files[0].type; // ファイルタイプも保持
+  if (fileInput.files[0]) {
+    fileToBase64(fileInput.files[0], (base64) => {
+      studyMeta.startPhoto = base64;
+      studyMeta.startPhotoType = fileInput.files[0].type; // ファイルタイプも保持
+      startTimerView();
+    });
+  } else {
+    studyMeta.startPhoto = null;
+    studyMeta.startPhotoType = null;
     startTimerView();
-  });
+  }
 }
 
 function startTimerView() {
@@ -135,11 +141,15 @@ function recordAndGo() {
   const score = parseFloat((accuracyRatio * 80 + Math.min(questionsPer20Sec * 10, 20)).toFixed(2));
 
   const recs = JSON.parse(localStorage.getItem('studyRecords') || '[]');
-  const newId = recs.length + 1;
+  const newId = recs.length + 1
 
-  fileToBase64(endFileInput.files[0], (base64) => {
-    saveRecord(recs, newId, c, t, score, totalSec, base64, endFileInput.files[0].type);
-  });
+  if (endFileInput.files[0]) {
+    fileToBase64(endFileInput.files[0], (base64) => {
+      saveRecord(recs, newId, c, t, score, totalSec, base64, endFileInput.files[0].type);
+    });
+  } else {
+    saveRecord(recs, newId, c, t, score, totalSec, null, null);
+  }
 }
 
 function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64, endPhotoType) {

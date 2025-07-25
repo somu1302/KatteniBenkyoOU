@@ -15,7 +15,7 @@ body {
   margin: 0 auto;
   padding: 20px;
   padding-bottom: 90px;
-  max-width: 900px;
+  width: 100vw;
   height: calc(100vh - 60px);
   overflow-y: auto; /* コンテンツ部分だけ縦スクロール可能 */
   box-sizing: border-box;
@@ -88,8 +88,7 @@ button:hover {
 .footer-btn:hover {
   background-color: #8ab8ff;
 }
-#rateChart,
-#timeChart {
+#rateChart, #timeChart {
   margin: 30px 0;
   padding: 20px;
   background-color: #e4f0ff;
