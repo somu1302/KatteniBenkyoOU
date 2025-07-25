@@ -232,9 +232,9 @@ function showRecords() {
 
   // 6. HTML出力
   let html = `<h2>記録を見る</h2>
-    <div style="margin-bottom: 16px; text-align: center; white-space: nowrap;">
-      <strong>レート：</strong>${latestRate}　
-      <strong>合計スコア：</strong>${totalScore}　
+    <div style="margin-bottom: 16px;">
+      <strong>レート：</strong>${latestRate}<br>
+      <strong>合計スコア：</strong>${totalScore}<br>
       <strong>合計勉強時間：</strong>${hours}時間${minutes}分
     </div>
     <canvas id="rateChart"></canvas>
