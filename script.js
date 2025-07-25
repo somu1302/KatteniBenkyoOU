@@ -18,22 +18,28 @@ function switchMode(mode) {
 function showStudy() {
   document.getElementById('mainContent').innerHTML = `
     <h2>勉強する</h2>
-    <label for="fileInput" class="custom-file-label">写真を選択</label>
-    <input type="file" id="fileInput" accept="image/*" capture="environment">
+    <label for="fileInput" class="custom-file-label">写真またはPDFを選択</label>
+    <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none">
     <div id="startPhotoPreview" style="text-align:center; margin-bottom:16px;"></div>
     <input type="text" id="titleInput" placeholder="タイトル(教科・タグなど)">
     <textarea id="startMemo" placeholder="開始メモ"></textarea>
     <button onclick="startStudy()">スタート</button>
   `;
 
-
   const fileInput = document.getElementById('fileInput');
   const previewDiv = document.getElementById('startPhotoPreview');
 
   fileInput.onchange = () => {
-    if(fileInput.files && fileInput.files[0]){
-      fileToBase64(fileInput.files[0], base64 => {
-        previewDiv.innerHTML = `<img src="${base64}" alt="開始写真プレビュー" style="max-width:100px; max-height:100px; border-radius:6px;">`;
+    if (fileInput.files && fileInput.files[0]) {
+      const file = fileInput.files[0];
+      fileToBase64(file, base64 => {
+        if (file.type === 'application/pdf') {
+          // PDFプレビュー
+          previewDiv.innerHTML = `<embed src="${base64}" type="application/pdf" width="100" height="120" />`;
+        } else {
+          // 画像プレビュー
+          previewDiv.innerHTML = `<img src="${base64}" alt="開始写真プレビュー" style="max-width:100px; max-height:100px; border-radius:6px;">`;
+        }
       });
     } else {
       previewDiv.innerHTML = '';
@@ -41,25 +47,26 @@ function showStudy() {
   };
 }
 
-
 function startStudy() {
   studyMeta = {
     title: document.getElementById('titleInput').value.trim() || "なし",
     startMemo: document.getElementById('startMemo').value.trim() || "なし",
   };
   const fileInput = document.getElementById('fileInput');
-  if(fileInput.files[0]){
+  if (fileInput.files[0]) {
     fileToBase64(fileInput.files[0], (base64) => {
       studyMeta.startPhoto = base64;
+      studyMeta.startPhotoType = fileInput.files[0].type; // ファイルタイプも保持
       startTimerView();
     });
   } else {
     studyMeta.startPhoto = null;
+    studyMeta.startPhotoType = null;
     startTimerView();
   }
 }
 
-function startTimerView(){
+function startTimerView() {
   startTime = new Date();
   document.getElementById('mainContent').innerHTML = `
     <h2>取組中…</h2>
@@ -67,9 +74,9 @@ function startTimerView(){
     <button onclick="endStudy()">終わり</button>
   `;
   timerId = setInterval(() => {
-    const elapsed = Math.floor((new Date() - startTime)/1000);
-    const m = Math.floor(elapsed/60), s = elapsed%60;
-    document.getElementById('timer').innerText = `経過時間: ${m}:${s.toString().padStart(2,'0')}`;
+    const elapsed = Math.floor((new Date() - startTime) / 1000);
+    const m = Math.floor(elapsed / 60), s = elapsed % 60;
+    document.getElementById('timer').innerText = `経過時間: ${m}:${s.toString().padStart(2, '0')}`;
   }, 1000);
 }
 
@@ -78,8 +85,8 @@ function endStudy() {
   endTime = new Date();
   document.getElementById('mainContent').innerHTML = `
     <h2>結果入力</h2>
-    <label for="endFileInput" class="custom-file-label">終了写真を選択</label>
-    <input type="file" id="endFileInput" accept="image/*" capture="environment">
+    <label for="endFileInput" class="custom-file-label">終了写真またはPDFを選択</label>
+    <input type="file" id="endFileInput" accept="image/*,application/pdf" style="display:none">
     <div id="endPhotoPreview" style="text-align:center; margin-bottom:16px;"></div>
     <input type="number" id="correctCount" placeholder="正解数">
     <input type="number" id="totalCount" placeholder="問題数">
@@ -87,14 +94,18 @@ function endStudy() {
     <button onclick="recordAndGo()">記録する</button>
   `;
 
-
   const endFileInput = document.getElementById('endFileInput');
   const previewDiv = document.getElementById('endPhotoPreview');
 
   endFileInput.onchange = () => {
-    if(endFileInput.files && endFileInput.files[0]){
-      fileToBase64(endFileInput.files[0], base64 => {
-        previewDiv.innerHTML = `<img src="${base64}" alt="終了写真プレビュー" style="max-width:100px; max-height:100px; border-radius:6px;">`;
+    if (endFileInput.files && endFileInput.files[0]) {
+      const file = endFileInput.files[0];
+      fileToBase64(file, base64 => {
+        if (file.type === 'application/pdf') {
+          previewDiv.innerHTML = `<embed src="${base64}" type="application/pdf" width="100" height="120" />`;
+        } else {
+          previewDiv.innerHTML = `<img src="${base64}" alt="終了写真プレビュー" style="max-width:100px; max-height:100px; border-radius:6px;">`;
+        }
       });
     } else {
       previewDiv.innerHTML = '';
@@ -102,14 +113,13 @@ function endStudy() {
   };
 }
 
-
 function recordAndGo() {
   const c = parseInt(document.getElementById('correctCount').value);
   const t = parseInt(document.getElementById('totalCount').value);
-  if (isNaN(c) || isNaN(t) || t<=0) { alert('正しい数値を入力してください'); return; }
+  if (isNaN(c) || isNaN(t) || t <= 0) { alert('正しい数値を入力してください'); return; }
   if (c > t) { alert('正解数が問題数を超えています'); return; }
 
-  const totalSec = (endTime - startTime)/1000;
+  const totalSec = (endTime - startTime) / 1000;
   const accuracyRatio = c / t;
   const questionsPer20Sec = (t * 20) / totalSec;
   const score = parseFloat((accuracyRatio * 80 + Math.min(questionsPer20Sec * 10, 20)).toFixed(2));
@@ -119,16 +129,16 @@ function recordAndGo() {
 
   const endFileInput = document.getElementById('endFileInput');
 
-  if(endFileInput.files[0]){
+  if (endFileInput.files[0]) {
     fileToBase64(endFileInput.files[0], (base64) => {
-      saveRecord(recs, newId, c, t, score, totalSec, base64);
+      saveRecord(recs, newId, c, t, score, totalSec, base64, endFileInput.files[0].type);
     });
   } else {
-    saveRecord(recs, newId, c, t, score, totalSec, null);
+    saveRecord(recs, newId, c, t, score, totalSec, null, null);
   }
 }
 
-function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64) {
+function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64, endPhotoType) {
   const record = {
     id: newId,
     title: studyMeta.title,
@@ -140,7 +150,9 @@ function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64) {
     startTime: startTime.toISOString(),
     elapsedSec: totalSec,
     startPhoto: studyMeta.startPhoto,
-    endPhoto: endPhotoBase64
+    startPhotoType: studyMeta.startPhotoType,
+    endPhoto: endPhotoBase64,
+    endPhotoType: endPhotoType
   };
   recs.push(record);
   localStorage.setItem('studyRecords', JSON.stringify(recs));
@@ -148,7 +160,7 @@ function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64) {
   switchMode('records');
 
   // 直後に拡大表示する処理を追加
-  setTimeout(() => expandDetail(newId), 100); // 少し待ってから拡大表示（DOMが描画されるのを待つ）
+  setTimeout(() => expandDetail(newId), 100);
 }
 
 function fileToBase64(file, callback) {
@@ -194,7 +206,7 @@ function showRecords() {
     <div class="record-list-scroll"><div class="record-grid">`;
   recs.forEach(r => {
     const dt = new Date(r.startTime);
-    const label = `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()} ${dt.getHours()}:${dt.getMinutes().toString().padStart(2, '0')}`;
+    const label = `${dt.getFullYear()}.${dt.getMonth() + 1}.${dt.getDate()} ${dt.getHours()}:${dt.getMinutes().toString().padStart(2, '0')}`;
     const mm = Math.floor(r.elapsedSec / 60), ss = Math.floor(r.elapsedSec % 60);
     html += `
       <div class="record-card" onclick="expandDetail(${r.id})">
@@ -259,14 +271,34 @@ function expandDetail(id) {
   card.className = 'detail-card';
   card.onclick = e => e.stopPropagation();
 
+  // 開始写真 or PDF表示
+  let startMediaHTML = '';
+  if (r.startPhoto) {
+    if (r.startPhotoType === 'application/pdf') {
+      startMediaHTML = `<embed src="${r.startPhoto}" type="application/pdf" width="300" height="400" />`;
+    } else {
+      startMediaHTML = `<img src="${r.startPhoto}" alt="開始写真" style="max-width:300px; max-height:400px;">`;
+    }
+  }
+
+  // 終了写真 or PDF表示
+  let endMediaHTML = '';
+  if (r.endPhoto) {
+    if (r.endPhotoType === 'application/pdf') {
+      endMediaHTML = `<embed src="${r.endPhoto}" type="application/pdf" width="300" height="400" />`;
+    } else {
+      endMediaHTML = `<img src="${r.endPhoto}" alt="終了写真" style="max-width:300px; max-height:400px;">`;
+    }
+  }
+
   card.innerHTML = `
     <button class="detail-close-btn" aria-label="閉じる">&times;</button>
     <h2>${label}</h2>
     <p>${r.total}問中${r.correct}問正解　正答率${((r.correct / r.total) * 100).toFixed(0)}%　かかった時間：${mm}:${ss.toString().padStart(2, '0')}</p>
     <p>スコア：${r.score}</p>
-    ${r.startPhoto ? `<img src="${r.startPhoto}" alt="開始写真">` : ''}
+    ${startMediaHTML}
     <p>開始メモ：${r.startMemo}</p>
-    ${r.endPhoto ? `<img src="${r.endPhoto}" alt="終了写真">` : ''}
+    ${endMediaHTML}
     <p>終了メモ：${r.endMemo}</p>
   `;
   overlay.appendChild(card);
