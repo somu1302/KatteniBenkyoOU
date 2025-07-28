@@ -175,42 +175,10 @@ function saveRecord(recs, newId, c, t, score, totalSec, endPhotoBase64, endPhoto
 
 
 function fileToBase64(file, callback) {
-  if (file.type.startsWith('image/')) {
-    // 画像の場合リサイズ処理
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxSize = 800; // 最大幅・高さを800pxに制限
-        let width = img.width;
-        let height = img.height;
-        if (width > height && width > maxSize) {
-          height = Math.round(height * maxSize / width);
-          width = maxSize;
-        } else if (height > maxSize) {
-          width = Math.round(width * maxSize / height);
-          height = maxSize;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        // jpeg圧縮率0.7に設定
-        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-        callback(resizedBase64);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  } else {
-    // 画像以外はそのままBase64変換
-    const reader = new FileReader();
-    reader.onload = e => callback(e.target.result);
-    reader.readAsDataURL(file);
-  }
+  const reader = new FileReader();
+  reader.onload = e => callback(e.target.result);
+  reader.readAsDataURL(file);
 }
-
 
 // --- 日別レート更新 ---
 function updateDailyRates(recs) {
